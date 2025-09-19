@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { ChatMessage } from '../types';
 import { Author } from '../types';
@@ -29,13 +28,14 @@ const ChatWindow: React.FC = () => {
     const newUserMessage: ChatMessage = { author: Author.USER, text: messageText };
     setMessages(prev => [...prev, newUserMessage]);
     setIsLoading(true);
+    
+    // Add a placeholder for the bot's response to enable streaming UI
+    setMessages(prev => [...prev, { author: Author.BOT, text: '' }]);
 
     try {
       const stream = await chatSession.sendMessageStream({ message: messageText });
       
       let botResponse = '';
-      setMessages(prev => [...prev, { author: Author.BOT, text: '' }]);
-
       for await (const chunk of stream) {
         botResponse += chunk.text;
         setMessages(prev => {
@@ -46,11 +46,22 @@ const ChatWindow: React.FC = () => {
       }
     } catch (error) {
       console.error('Gemini API error:', error);
+      const errorText = error instanceof Error 
+        ? error.message 
+        : '죄송합니다, 메시지를 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      
       const errorMessage: ChatMessage = {
         author: Author.BOT,
-        text: '죄송합니다, 메시지를 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        text: errorText,
       };
-      setMessages(prev => [...prev, errorMessage]);
+
+      setMessages(prev => {
+        const newMessages = [...prev];
+        // Replace the bot's placeholder message with the error message
+        newMessages[newMessages.length - 1] = errorMessage;
+        return newMessages;
+      });
+
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +73,7 @@ const ChatWindow: React.FC = () => {
         {messages.map((msg, index) => (
           <Message key={index} message={msg} />
         ))}
-        {isLoading && <TypingIndicator />}
+        {isLoading && messages[messages.length - 1]?.text !== '' && <TypingIndicator />}
       </div>
       <MessageInput onSendMessage={handleSendMessage} disabled={isLoading} />
     </div>
