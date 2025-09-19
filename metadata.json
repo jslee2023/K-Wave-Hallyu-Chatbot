@@ -1,0 +1,5 @@
+{
+  "name": "Hallyu Chatbot",
+  "description": "A chatbot specialized in the Korean Wave (Hallyu), providing information on K-pop, K-dramas, Korean culture, and more. Ask anything about Hallyu and get friendly, detailed answers.",
+  "requestFramePermissions": []
+}
